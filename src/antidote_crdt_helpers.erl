@@ -31,12 +31,12 @@
 -spec orddict_merge(orddict:orddict(K, V1), orddict:orddict(K, V2), fun((K, none|V1, none|V2) -> none | V3)) -> orddict:orddict(K, V3).
 orddict_merge([], [], M) when is_function(M, 3) ->
   [];
-orddict_merge([], [{K, V}| Ys], M) ->
+orddict_merge([], [{K, V} | Ys], M) ->
   case M(K, none, V) of
     none -> orddict_merge([], Ys, M);
-    X -> [{K,X} | orddict_merge([], Ys, M)]
+    X -> [{K, X} | orddict_merge([], Ys, M)]
   end;
-orddict_merge([{K, V}|Xs], [], M) ->
+orddict_merge([{K, V} | Xs], [], M) ->
   case M(K, V, none) of
     none -> orddict_merge(Xs, [], M);
     X -> [{K, X} | orddict_merge(Xs, [], M)]
@@ -68,17 +68,17 @@ orddict_merge([{KX, VX} | Xs], [{KY, VY} | Ys], M) ->
 
 % select keys from an orddict given an ordset of keys
 % if a searched key is not present, use the given default value
--spec select_keys(Keys:: ordsets:ordset(K), Dict::orddict:orddict(K,V), Default) -> orddict:orddict(K, V|Default).
+-spec select_keys(Keys :: ordsets:ordset(K), Dict :: orddict:orddict(K, V), Default) -> orddict:orddict(K, V|Default).
 select_keys([], _, _) ->
   [];
 select_keys(Ks, [], Default) ->
   [{K, Default} || K <- Ks];
-select_keys([K|Ks], [{KX, VX}| Xs], Default) ->
+select_keys([K | Ks], [{KX, VX} | Xs], Default) ->
   if
     K < KX ->
-      [{K, Default} | select_keys(Ks, [{KX, VX}| Xs], Default)];
+      [{K, Default} | select_keys(Ks, [{KX, VX} | Xs], Default)];
     KX < K ->
-      select_keys([K|Ks], Xs, Default);
+      select_keys([K | Ks], Xs, Default);
     true ->  % K == KX
       [{K, VX} | select_keys(Ks, Xs, Default)]
   end.

@@ -66,6 +66,9 @@
 -endif.
 
 -export_type([orset/0, binary_orset/0, orset_op/0]).
+
+% The orset is an orddict, where the keys are elements and the values are nonempty lists of unique tokens
+% the tokens represent
 -opaque orset() :: orddict:orddict(member(), tokens()).
 
 -type binary_orset() :: binary(). %% A binary that from_binary/1 will operate on.
@@ -77,14 +80,14 @@
     | {remove_all, [member()]}
     | {reset, {}}.
 
-%% The downstream op is a list of triples.
-%% In each triple:
-%%  - the first component is the elem that was added or removed
-%%  - the second component is the list of supporting tokens to be added
-%%  - the third component is the list of supporting tokens to be removed
--type downstream_op() :: [{member(), tokens(), tokens()}].
+%% The downstream op is an orddict.
+%%  - the key is the elem that was added or removed
+%%  - the value is a pair consisting of
+%%       1. the list of supporting tokens to be added
+%%       2. the list of supporting tokens to be removed
+-type downstream_op() :: orddict:orddict(member(), {Added::token(), Removed::token()}).
 
--type member() :: term().
+-type member() :: member. % term().
 -type token() :: binary().
 -type tokens() :: [token()].
 
@@ -106,20 +109,22 @@ value(ORSet) ->
 downstream({add, Elem}, ORSet) ->
     downstream({add_all, [Elem]}, ORSet);
 downstream({add_all, Elems}, ORSet) ->
-    CreateDownstream = fun(Elem, CurrentTokens) ->
-        Token = unique(),
-        {Elem, [Token], CurrentTokens}
-    end,
-    DownstreamOps = create_downstreams(CreateDownstream, lists:usort(Elems), ORSet, []),
-    {ok, lists:reverse(DownstreamOps)};
+    Entries = antidote_crdt_helpers:select_keys(lists:usort(Elems), ORSet, []),
+    CreateDownstream =
+        fun(_Elem, CurrentTokens) ->
+            Token = unique(),
+            {[Token], CurrentTokens}
+        end,
+    {ok, orddict:map(CreateDownstream, Entries)};
 downstream({remove, Elem}, ORSet) ->
     downstream({remove_all, [Elem]}, ORSet);
 downstream({remove_all, Elems}, ORSet) ->
-    CreateDownstream = fun(Elem, CurrentTokens) ->
-        {Elem, [], CurrentTokens}
-    end,
-    DownstreamOps = create_downstreams(CreateDownstream, lists:usort(Elems), ORSet, []),
-    {ok, lists:reverse(DownstreamOps)};
+    Entries = antidote_crdt_helpers:select_keys(lists:usort(Elems), ORSet, []),
+    CreateDownstream =
+        fun(_Elem, CurrentTokens) ->
+            {[], CurrentTokens}
+        end,
+    {ok, orddict:map(CreateDownstream, Entries)};
 downstream({reset, {}}, ORSet) ->
     % reset is like removing all elements
     downstream({remove_all, value(ORSet)}, ORSet).
@@ -127,7 +132,27 @@ downstream({reset, {}}, ORSet) ->
 %% @doc apply downstream operations and update an `orset()'.
 -spec update(downstream_op(), orset()) -> {ok, orset()}.
 update(DownstreamOp, ORSet) ->
-    {ok, apply_downstreams(DownstreamOp, ORSet)}.
+    NewOrSet = antidote_crdt_helpers:orddict_merge(DownstreamOp, ORSet,
+        fun
+            (_Elem, none, V) ->
+                % no changes, keep old value
+                V;
+            (_Elem, {Added, _Removed}, none) ->
+                % new element, store added tokens
+                case Added of
+                    [] -> none;
+                    _ -> Added
+                end;
+            (_Elem, {Added, Removed}, CurrentTokens) ->
+                % remove old tokens and add new tokens
+                NewTokens = Added ++ (CurrentTokens -- Removed),
+                % if no tokens are left, remove entry
+                case NewTokens of
+                    [] -> none;
+                    _ -> NewTokens
+                end
+        end),
+    {ok, NewOrSet}.
 
 -spec equal(orset(), orset()) -> boolean().
 equal(ORSetA, ORSetB) ->
@@ -152,60 +177,6 @@ from_binary(<<?TAG:8/integer, ?V1_VERS:8/integer, Bin/binary>>) ->
 unique() ->
     crypto:strong_rand_bytes(20).
 
-%% @private generic downstream op creation for adds and removals
-create_downstreams(_CreateDownstream, [], _ORSet, DownstreamOps) ->
-    DownstreamOps;
-create_downstreams(CreateDownstream, Elems, [], DownstreamOps) ->
-    lists:foldl(
-        fun(Elem, Ops) ->
-            DownstreamOp = CreateDownstream(Elem, []),
-            [DownstreamOp|Ops]
-        end,
-        DownstreamOps,
-        Elems
-    );
-create_downstreams(CreateDownstream, [Elem1|ElemsRest]=Elems, [{Elem2, Tokens}|ORSetRest]=ORSet, DownstreamOps) ->
-    if
-        Elem1 == Elem2 ->
-            DownstreamOp = CreateDownstream(Elem1, Tokens),
-            create_downstreams(CreateDownstream, ElemsRest, ORSetRest, [DownstreamOp|DownstreamOps]);
-        Elem1 > Elem2 ->
-            create_downstreams(CreateDownstream, Elems, ORSetRest, DownstreamOps);
-        true ->
-            DownstreamOp = CreateDownstream(Elem1, Tokens),
-            create_downstreams(CreateDownstream, ElemsRest, ORSet, [DownstreamOp|DownstreamOps])
-    end.
-
-%% @private apply a list of downstream ops to a given orset
-apply_downstreams([], ORSet) ->
-    ORSet;
-apply_downstreams(Ops, []) ->
-    lists:foldl(
-        fun({Elem, ToAdd, ToRemove}, ORSet) ->
-            ORSet ++ apply_downstream(Elem, [], ToAdd, ToRemove)
-        end,
-        [],
-        Ops
-    );
-apply_downstreams([{Elem1, ToAdd, ToRemove}|OpsRest]=Ops, [{Elem2, CurrentTokens}|ORSetRest]=ORSet) ->
-    if
-        Elem1 == Elem2 ->
-            apply_downstream(Elem1, CurrentTokens, ToAdd, ToRemove) ++ apply_downstreams(OpsRest, ORSetRest);
-        Elem1 > Elem2 ->
-            [{Elem2, CurrentTokens} | apply_downstreams(Ops, ORSetRest)];
-        true ->
-            apply_downstream(Elem1, [], ToAdd, ToRemove) ++ apply_downstreams(OpsRest, ORSet)
-    end.
-
-%% @private create an orddict entry from a downstream op
-apply_downstream(Elem, CurrentTokens, ToAdd, ToRemove) ->
-    Tokens = (CurrentTokens ++ ToAdd) -- ToRemove,
-    case Tokens of
-        [] ->
-            [];
-        _ ->
-            [{Elem, Tokens}]
-    end.
 
 %% @doc The following operation verifies
 %%      that Operation is supported by this particular CRDT.
@@ -237,9 +208,9 @@ add_test() ->
     Elems = [<<"li">>, <<"manu">>],
     Set1 = new(),
     {ok, DownstreamOp1} = downstream({add, Elem}, Set1),
-    ?assertMatch([{Elem, _, _}], DownstreamOp1),
+    ?assertMatch([{Elem, {_, _}}], DownstreamOp1),
     {ok, DownstreamOp2} = downstream({add_all, Elems}, Set1),
-    ?assertMatch([{<<"li">>, _, _}, {<<"manu">>, _, _}], DownstreamOp2),
+    ?assertMatch([{<<"li">>, {_, _}}, {<<"manu">>, {_, _}}], DownstreamOp2),
     {ok, Set2} = update(DownstreamOp1, Set1),
     ?assertEqual([Elem], value(Set2)),
     {ok, Set3} = update(DownstreamOp2, Set1),

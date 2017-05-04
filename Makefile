@@ -34,3 +34,6 @@ include tools.mk
 
 typer:
 	typer --annotate -I ../ --plt $(PLT) -r src
+
+bench:
+	./benchmark/run.sh orset

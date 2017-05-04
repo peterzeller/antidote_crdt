@@ -1,7 +1,9 @@
 _build/
 test/.rebar3/
-TEST-file_"antidote_crdt.app".xml
+TEST*.xml
 *.swp
 src/*.swp
 test/*.swp
 *.beam
+tests/
+benchmark/results

@@ -122,7 +122,7 @@ to_binary(FatCtr) ->
 %% @doc Decode binary
 -spec from_binary(binary()) -> {ok, state()} | {error, term()}.
 from_binary(<<?TAG:8/integer, ?V1_VERS:8/integer, Bin/binary>>) ->
-    {ok, riak_dt:from_binary(Bin)}.
+    {ok, binary_to_term(Bin)}.
 
 is_bottom(FatCtr) ->
   FatCtr == new().

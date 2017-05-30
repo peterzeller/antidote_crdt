@@ -224,17 +224,21 @@ compress(A, B) ->
     {noop, NewOp}.
 
 -spec compress_helper(downstream_op(), downstream_op()) -> downstream_op().
+compress_helper([], B) ->
+    B;
 compress_helper(A, []) ->
     A;
-compress_helper([Op1 = {Elem1, _, _, _} | Rest1] = Ops, [Op2 = {Elem2, _, _, _} | Rest2]) ->
+compress_helper([Op1 = {Elem1, _, _, _} | Rest1] = Ops1, [Op2 = {Elem2, _, _, _} | Rest2] = Ops2) ->
     if
-      Elem1 == Elem2 ->
-          case merge(Op1, Op2) of
-            {Elem1, [], [], []} -> compress_helper(Rest1, Rest2);
-            NewOp ->[NewOp | compress_helper(Rest1, Rest2)]
-          end;
-      Elem1 > Elem2 ->
-          [Op2 | compress_helper(Ops, Rest2)]
+        Elem1 == Elem2 ->
+            case merge(Op1, Op2) of
+                {Elem1, [], [], []} -> compress_helper(Rest1, Rest2);
+                NewOp -> [NewOp | compress_helper(Rest1, Rest2)]
+            end;
+        Elem1 > Elem2 ->
+            [Op2 | compress_helper(Ops1, Rest2)];
+        Elem1 < Elem2 ->
+            [Op1 | compress_helper(Rest1, Ops2)]
     end.
 
 -spec merge(element(), element()) -> element().

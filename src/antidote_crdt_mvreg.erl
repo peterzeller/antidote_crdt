@@ -45,7 +45,9 @@
           from_binary/1,
           is_operation/1,
           require_state_downstream/1,
-          is_bottom/1
+          is_bottom/1,
+          can_compress/2,
+          compress/2
         ]).
 
 
@@ -139,6 +141,17 @@ require_state_downstream(_) ->
 
 is_bottom(State) -> State == new().
 
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+%% TODO: write compression
+-spec can_compress(mvreg_effect(), mvreg_effect()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(mvreg_effect(), mvreg_effect()) -> {mvreg_effect() | noop, mvreg_effect() | noop}.
+compress(_, _) -> {noop, noop}.
 
 %% ===================================================================
 %% EUnit tests

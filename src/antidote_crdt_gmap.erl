@@ -31,7 +31,8 @@
 
 %% API
 -export([new/0, value/1, update/2, equal/2,
-  to_binary/1, from_binary/1, is_operation/1, downstream/2, require_state_downstream/1]).
+  to_binary/1, from_binary/1, is_operation/1, downstream/2, require_state_downstream/1,
+  can_compress/2, compress/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -138,6 +139,17 @@ distinct([]) -> true;
 distinct([X|Xs]) ->
   not lists:member(X, Xs) andalso distinct(Xs).
 
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+%% TODO: write compression
+-spec can_compress(gmap_effect(), gmap_effect()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(gmap_effect(), gmap_effect()) -> {gmap_effect() | noop, gmap_effect() | noop}.
+compress(_, _) -> {noop, noop}.
 
 %% ===================================================================
 %% EUnit tests

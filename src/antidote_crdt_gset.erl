@@ -36,7 +36,9 @@
           to_binary/1,
           from_binary/1,
           is_operation/1,
-          require_state_downstream/1
+          require_state_downstream/1,
+          can_compress/2,
+          compress/2
         ]).
 
 -type gset() :: ordsets:ordset(member()).
@@ -75,6 +77,22 @@ to_binary(CRDT) ->
 
 from_binary(Bin) ->
   {ok, erlang:binary_to_term(Bin)}.
+
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+%% TODO: write compression
+-spec can_compress(gset_effect(), gset_effect()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(gset_effect(), gset_effect()) -> {gset_effect() | noop, gset_effect() | noop}.
+compress(_, _) -> {noop, noop}.
+
+%% ===================================================================
+%% EUnit tests
+%% ===================================================================
 
 -ifdef(test).
 all_test() ->

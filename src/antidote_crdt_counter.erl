@@ -40,7 +40,9 @@
           to_binary/1,
           from_binary/1,
           is_operation/1,
-          require_state_downstream/1
+          require_state_downstream/1,
+          can_compress/2,
+          compress/2
         ]).
 
 %% @doc Create a new, empty 'pncounter()'
@@ -112,6 +114,18 @@ is_operation(_) -> false.
 %%      to generate downstream effect
 require_state_downstream(_) ->
     false.
+
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+%% TODO: write compression
+-spec can_compress(pncounter_effect(), pncounter_effect()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(pncounter_effect(), pncounter_effect()) -> {pncounter_effect() | noop, pncounter_effect() | noop}.
+compress(_, _) -> {noop, noop}.
 
 %% ===================================================================
 %% EUnit tests

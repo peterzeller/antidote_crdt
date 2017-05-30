@@ -56,7 +56,9 @@
           from_binary/1,
           is_operation/1,
           require_state_downstream/1,
-          is_bottom/1
+          is_bottom/1,
+          can_compress/2,
+          compress/2
         ]).
 
 -behaviour(antidote_crdt).
@@ -82,7 +84,8 @@
 %%  - the first component is the elem that was added or removed
 %%  - the second component is the list of supporting tokens to be added
 %%  - the third component is the list of supporting tokens to be removed
--type downstream_op() :: [{member(), tokens(), tokens()}].
+-type element() :: {member(), tokens(), tokens()}.
+-type downstream_op() :: [element()].
 
 -type member() :: term().
 -type token() :: binary().
@@ -223,6 +226,44 @@ require_state_downstream({remove_all, _}) -> true;
 require_state_downstream({reset, {}}) -> true.
 
 is_bottom(State) -> State == new().
+
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+-spec can_compress(downstream_op(), downstream_op()) -> boolean().
+can_compress(_, _) ->
+    true.
+
+-spec compress(downstream_op(), downstream_op()) -> {downstream_op() | noop, downstream_op() | noop}.
+compress(A, B) ->
+    NewOp = case compress_helper(A, B) of
+        [] -> noop;
+        Op -> Op
+    end,
+    {noop, NewOp}.
+
+-spec compress_helper(downstream_op(), downstream_op()) -> downstream_op().
+compress_helper(A, []) ->
+    A;
+compress_helper([Op1 = {Elem1, _, _} | Rest1] = Ops, [Op2 = {Elem2, _, _} | Rest2]) ->
+    if
+      Elem1 == Elem2 ->
+          case merge(Op1, Op2) of
+            {Elem1, [], []} -> compress_helper(Rest1, Rest2);
+            NewOp ->[NewOp | compress_helper(Rest1, Rest2)]
+          end;
+      Elem1 > Elem2 ->
+          [Op2 | compress_helper(Ops, Rest2)]
+    end.
+
+-spec merge(element(), element()) -> element().
+merge({Elem, ToAdd1, ToRemove1}, {Elem, ToAdd2, ToRemove2}) ->
+    Adds = ordsets:union(ToAdd1, ToAdd2),
+    Removes = ordsets:union(ToRemove1, ToRemove2),
+    NewToAdd = ordsets:subtract(Adds, Removes),
+    NewToRemove = ordsets:subtract(Removes, Adds),
+    {Elem, NewToAdd, NewToRemove}.
 
 %% ===================================================================
 %% EUnit tests

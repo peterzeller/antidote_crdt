@@ -43,7 +43,12 @@
                 antidote_crdt_flag_dw
                ]).
 
--export([is_type/1
+-define(COMPRESSABLE, [antidote_crdt_orset,
+                       antidote_crdt_set_rw
+               ]).
+
+-export([is_type/1,
+         is_compressable/1
         ]).
 
 -callback new() -> crdt().
@@ -52,6 +57,8 @@
 -callback update(effect(), crdt()) ->  {ok, crdt()}.
 -callback require_state_downstream(update()) -> boolean().
 -callback is_operation(update()) ->  boolean(). %% Type check
+-callback can_compress(effect(), effect()) ->  boolean().
+-callback compress(effect(), effect()) ->  {effect() | noop, effect() | noop}.
 
 -callback equal(crdt(), crdt()) -> boolean().
 -callback to_binary(crdt()) -> binary().
@@ -64,5 +71,8 @@
 
 is_type(Type) ->
     is_atom(Type) andalso lists:member(Type, ?CRDTS).
+
+is_compressable(Type) ->
+    is_atom(Type) andalso lists:member(Type, ?COMPRESSABLE).
 
 %% End of Module.

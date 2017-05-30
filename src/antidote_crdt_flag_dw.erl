@@ -34,7 +34,9 @@
           from_binary/1,
           is_operation/1,
           is_bottom/1,
-          require_state_downstream/1
+          require_state_downstream/1,
+          can_compress/2,
+          compress/2
         ]).
 
 -behaviour(antidote_crdt).
@@ -94,6 +96,17 @@ is_bottom(Flag) ->
 
 require_state_downstream(A) -> antidote_crdt_flag:require_state_downstream(A).
 
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
+
+%% TODO: write compression
+-spec can_compress(downstream_op(), downstream_op()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(downstream_op(), downstream_op()) -> {downstream_op() | noop, downstream_op() | noop}.
+compress(_, _) -> {noop, noop}.
 
 %% ===================================================================
 %% EUnit tests

@@ -44,7 +44,9 @@
           from_binary/1,
           is_operation/1,
           is_bottom/1,
-          require_state_downstream/1
+          require_state_downstream/1,
+          can_compress/2,
+          compress/2
         ]).
 
 -type uniqueToken() :: term().
@@ -138,7 +140,17 @@ is_operation(_) -> false.
 require_state_downstream(Op) ->
   Op == {reset, {}}.
 
+%% ===================================================================
+%% Compression functions
+%% ===================================================================
 
+%% TODO: write compression
+-spec can_compress(effect(), effect()) -> boolean().
+can_compress(_, _) -> false.
+
+%% TODO: write compression
+-spec compress(effect(), effect()) -> {effect() | noop, effect() | noop}.
+compress(_, _) -> {noop, noop}.
 
 %% ===================================================================
 %% EUnit tests

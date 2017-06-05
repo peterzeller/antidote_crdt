@@ -145,13 +145,26 @@ is_bottom(State) -> State == new().
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(mvreg_effect(), mvreg_effect()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) ->
+    true.
 
-%% TODO: write compression
 -spec compress(mvreg_effect(), mvreg_effect()) -> {mvreg_effect() | noop, mvreg_effect() | noop}.
-compress(_, _) -> {noop, noop}.
+compress({_, ToAdd1, ToRemove1}=A, {_, ToAdd2, ToRemove2}=B) ->
+    Removes = ordsets:union(ToRemove1, ToRemove2),
+    A1 = case ordsets:subtract([ToAdd1], Removes) of
+      [] ->
+        noop;
+      [ToAdd1] ->
+        A
+    end,
+    B1 = case ordsets:subtract([ToAdd2], Removes) of
+      [] ->
+        noop;
+      [ToAdd2] ->
+        B
+    end,
+    {A1, B1}.
 
 %% ===================================================================
 %% EUnit tests

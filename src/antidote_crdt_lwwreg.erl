@@ -93,13 +93,18 @@ from_binary(Bin) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(term(), term()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(term(), term()) -> {term() | noop, term() | noop}.
-compress(_, _) -> {noop, noop}.
+compress({Time1, Val1}, {Time2, Val2}) ->
+    NewOp = case Time1 > Time2 of
+              true ->
+                {Time1, Val1};
+              false ->
+                {Time2, Val2}
+          end,
+    {noop, NewOp}.
 
 %% ===================================================================
 %% EUnit tests

@@ -119,13 +119,11 @@ require_state_downstream(_) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(pncounter_effect(), pncounter_effect()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(pncounter_effect(), pncounter_effect()) -> {pncounter_effect() | noop, pncounter_effect() | noop}.
-compress(_, _) -> {noop, noop}.
+compress(N1, N2) -> {noop, N1+N2}.
 
 %% ===================================================================
 %% EUnit tests

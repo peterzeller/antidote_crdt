@@ -144,13 +144,36 @@ require_state_downstream(Op) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(effect(), effect()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(effect(), effect()) -> {effect() | noop, effect() | noop}.
-compress(_, _) -> {noop, noop}.
+compress([], []) ->
+    {noop, noop};
+compress(A, []) ->
+    {noop, A};
+compress([], B) ->
+    {noop, B};
+compress({_Token1, _Val1}=A, {_Token2, _Val2}=B) ->
+    {A, B};
+compress({Token1, _Val1}=A, [_Token, _TokensRest]=Tokens) ->
+    A1 = case ordsets:subtract([Token1], Tokens) of
+      [] ->
+        noop;
+      [Token1] ->
+        A
+    end,
+    {A1, Tokens};
+compress([_Token|_TokensRest]=Tokens, {Token2, _Val2}=B) ->
+    B1 = case ordsets:subtract([Token2], Tokens) of
+      [] ->
+        noop;
+      [Token2] ->
+        B
+    end,
+    {B1, Tokens};
+compress([_Token1, _TokensRest1]=Tokens1, [_Token2, _TokensRest2]=Tokens2) ->
+    {noop, ordsets:union(Tokens1, Tokens2)}.
 
 %% ===================================================================
 %% EUnit tests

@@ -101,11 +101,14 @@ require_state_downstream(A) -> antidote_crdt_flag:require_state_downstream(A).
 
 %% TODO: write compression
 -spec can_compress(downstream_op(), downstream_op()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
 %% TODO: write compression
 -spec compress(downstream_op(), downstream_op()) -> {downstream_op() | noop, downstream_op() | noop}.
-compress(_, _) -> {noop, noop}.
+compress({SeenTokens1, NewEnableTokens1}, {SeenTokens2, NewEnableTokens2}) ->
+    SeenTokens = SeenTokens1 ++ SeenTokens2,
+    FinalEnableTokens = (NewEnableTokens1 ++ NewEnableTokens2) -- SeenTokens,
+    {noop, {SeenTokens, FinalEnableTokens}}.
 
 %% ===================================================================
 %% EUnit tests

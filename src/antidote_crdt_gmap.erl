@@ -143,13 +143,24 @@ distinct([X|Xs]) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(gmap_effect(), gmap_effect()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(gmap_effect(), gmap_effect()) -> {gmap_effect() | noop, gmap_effect() | noop}.
-compress(_, _) -> {noop, noop}.
+compress({update, {{Key1, Type1}, Op1}}=A, {update, {{Key2, _Type2}, Op2}}=B) ->
+    case Key1 =:= Key2 of
+      true ->
+        case Type1:compress(Op1, Op2) of
+          {noop, noop} ->
+            {noop, noop};
+          {noop, NewOp} ->
+            {noop, {update, {{Key1, Type1}, NewOp}}};
+          {_, _} ->
+            {A, B}
+        end;
+      false ->
+        {A, B}
+    end.
 
 %% ===================================================================
 %% EUnit tests

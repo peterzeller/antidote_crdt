@@ -82,13 +82,14 @@ from_binary(Bin) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(gset_effect(), gset_effect()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(gset_effect(), gset_effect()) -> {gset_effect() | noop, gset_effect() | noop}.
-compress(_, _) -> {noop, noop}.
+compress([], []) -> {noop, noop};
+compress(A, []) -> {noop, A};
+compress([], B) -> {noop, B};
+compress(A, B) -> {noop, ordsets:union(A, B)}.
 
 %% ===================================================================
 %% EUnit tests

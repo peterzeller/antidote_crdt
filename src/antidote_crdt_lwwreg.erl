@@ -97,14 +97,8 @@ from_binary(Bin) ->
 can_compress(_, _) -> true.
 
 -spec compress(term(), term()) -> {term() | noop, term() | noop}.
-compress({Time1, Val1}, {Time2, Val2}) ->
-    NewOp = case Time1 > Time2 of
-              true ->
-                {Time1, Val1};
-              false ->
-                {Time2, Val2}
-          end,
-    {noop, NewOp}.
+compress({_Time1, _Val1}=A, {_Time2, _Val2}=B) ->
+    {noop, max(A, B)}.
 
 %% ===================================================================
 %% EUnit tests

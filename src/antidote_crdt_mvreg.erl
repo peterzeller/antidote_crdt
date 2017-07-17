@@ -146,6 +146,8 @@ is_bottom(State) -> State == new().
 %% ===================================================================
 
 -spec can_compress(mvreg_effect(), mvreg_effect()) -> boolean().
+can_compress({reset, _}, _) -> false;
+can_compress(_, {reset, _}) -> false;
 can_compress(_, _) ->
     true.
 

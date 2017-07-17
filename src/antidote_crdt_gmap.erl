@@ -155,8 +155,10 @@ compress({update, {{Key1, Type1}, Op1}}=A, {update, {{Key2, _Type2}, Op2}}=B) ->
             {noop, noop};
           {noop, NewOp} ->
             {noop, {update, {{Key1, Type1}, NewOp}}};
-          {_, _} ->
-            {A, B}
+          {NewOp, noop} ->
+            {{update, {{Key1, Type1}, NewOp}}, noop};
+          {NewOp1, NewOp2} ->
+            {{update, {{Key1, Type1}, NewOp1}}, {update, {{Key1, Type1}, NewOp2}}}
         end;
       false ->
         {A, B}

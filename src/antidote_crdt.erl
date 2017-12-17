@@ -43,8 +43,16 @@
                 antidote_crdt_flag_dw
                ]).
 
--define(COMPRESSABLE, [antidote_crdt_orset,
-                       antidote_crdt_set_rw
+-define(COMPRESSABLE, [antidote_crdt_counter,
+                       antidote_crdt_orset,
+                       antidote_crdt_gset,
+                       antidote_crdt_mvreg,
+                       antidote_crdt_lwwreg,
+                       antidote_crdt_gmap,
+                       antidote_crdt_set_rw,
+                       antidote_crdt_fat_counter,
+                       antidote_crdt_flag_ew,
+                       antidote_crdt_flag_dw,
                ]).
 
 -export([is_type/1,

@@ -47,6 +47,7 @@
                        antidote_crdt_orset,
                        antidote_crdt_gset,
                        antidote_crdt_mvreg,
+                       antidote_crdt_map,
                        antidote_crdt_lwwreg,
                        antidote_crdt_gmap,
                        antidote_crdt_set_rw,

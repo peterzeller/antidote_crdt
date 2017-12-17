@@ -84,13 +84,11 @@ from_binary(Bin) ->
 %% Compression functions
 %% ===================================================================
 
-%% TODO: write compression
 -spec can_compress(term(), term()) -> boolean().
-can_compress(_, _) -> false.
+can_compress(_, _) -> true.
 
-%% TODO: write compression
 -spec compress(term(), term()) -> {term() | noop, term() | noop}.
-compress(_, _) -> {noop, noop}.
+compress({merge, S1}, {merge, S2}) -> {noop, ?RIAK_MODULE:merge(S1, S2)}.
 
 %% ===================================================================
 %% EUnit tests

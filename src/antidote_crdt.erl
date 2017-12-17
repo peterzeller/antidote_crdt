@@ -51,6 +51,7 @@
                        antidote_crdt_lwwreg,
                        antidote_crdt_gmap,
                        antidote_crdt_set_rw,
+                       antidote_crdt_integer,
                        antidote_crdt_fat_counter,
                        antidote_crdt_flag_ew,
                        antidote_crdt_flag_dw,

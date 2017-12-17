@@ -133,11 +133,11 @@ require_state_downstream(_) -> false.
 %% ===================================================================
 
 -spec can_compress(effect(), effect()) -> boolean().
-can_compress({increment, V1}, {increment, V2}) -> true;
+can_compress({increment, _}, {increment, _}) -> true;
 can_compress(_, _) -> false.
 
 -spec compress(effect(), effect()) -> {effect() | noop, effect() | noop}.
-compress({increment, V1}, {increment, V2}) -> {noop, {increment, V1 + V2}};
+compress({increment, V1}, {increment, V2}) -> {noop, {increment, V1 + V2}}.
 
 %% ===================================================================
 %% EUnit tests

@@ -115,4 +115,12 @@ compress({SeenTokens1, NewEnableTokens1, NewDisableTokens1}, {SeenTokens2, NewEn
 %% ===================================================================
 -ifdef(TEST).
 
+compression_test() ->
+    Token1 = antidote_crdt_flag:unique(),
+    Token2 = antidote_crdt_flag:unique(),
+    ?assertEqual(can_compress({[Token1], [], []}, {[Token2], [], []}), true),
+    ?assertEqual(compress({[Token1], [], []}, {[Token2], [], []}), {noop, {[Token1, Token2], [], []}}),
+    ?assertEqual(compress({[Token1], [], []}, {[], [], [Token1]}), {noop, {[Token1], [], []}}),
+    ?assertEqual(compress({[Token1], [], []}, {[], [Token2], []}), {noop, {[Token1], [Token2], []}}).
+
 -endif.

@@ -381,4 +381,14 @@ binary_test() ->
     {ok, ORSet4} = from_binary(BinaryORSet3),
     ?assert(equal(ORSet3, ORSet4)).
 
+compression_test() ->
+    Token1 = unique(),
+    Token2 = unique(),
+    ?assertEqual(can_compress([{a, [Token1], []}], [{a, [], [Token1]}]), true),
+    ?assertEqual(compress([{a, [Token1], []}], [{a, [], [Token1]}]), {noop, noop}),
+    ?assertEqual(compress([{a, [Token1], []}], []), {noop, [{a, [Token1], []}]}),
+    ?assertEqual(compress([{a, [Token1], []}], [{a, [Token2], []}]), {noop, [{a, lists:sort([Token2, Token1]), []}]}),
+    ?assertEqual(compress([{a, [Token1], []}], [{a, [Token2], [Token1]}]), {noop, [{a, [Token2], []}]}),
+    ?assertEqual(compress([{a, [Token1], []}], [{a, [], [Token2]}]), {noop, [{a, [Token1], [Token2]}]}).
+
 -endif.

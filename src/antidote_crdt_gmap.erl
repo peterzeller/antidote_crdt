@@ -71,9 +71,9 @@ downstream({update, {{Key, Type}, Op}}, CurrentMap) ->
       false -> Type:new()
     end,
     {ok, DownstreamOp} = Type:downstream(Op, CurrentValue),
-    {ok, {update, {{Key, Type}, DownstreamOp}}};
+    {ok, {update, [{update, {{Key, Type}, DownstreamOp}}]}};
 downstream({update, Ops}, CurrentMap) when is_list(Ops) ->
-    {ok, {update, lists:map(fun(Op) -> {ok, DSOp} = downstream({update, Op}, CurrentMap), DSOp end, Ops)}};
+    {ok, {update, lists:sort(lists:map(fun(Op) -> {ok, DSOp} = downstream({update, Op}, CurrentMap), DSOp end, Ops))}};
 downstream({reset, {}}, CurrentMap) ->
   % calls reset on all embedded keys which support reset
   Reset =
@@ -86,7 +86,7 @@ downstream({reset, {}}, CurrentMap) ->
       end
     end,
   DownstreamResets = lists:flatmap(Reset, dict:to_list(CurrentMap)),
-  {ok, {update, DownstreamResets}}.
+  {ok, {update, lists:sort(DownstreamResets)}}.
 
 -spec update(gmap_effect(), gmap()) -> {ok, gmap()}.
 update({update, {{Key, Type}, Op}}, Map) ->
@@ -147,21 +147,32 @@ distinct([X|Xs]) ->
 can_compress(_, _) -> true.
 
 -spec compress(gmap_effect(), gmap_effect()) -> {gmap_effect() | noop, gmap_effect() | noop}.
-compress({update, {{Key1, Type1}, Op1}}=A, {update, {{Key2, _Type2}, Op2}}=B) ->
-    case Key1 =:= Key2 of
-      true ->
-        case Type1:compress(Op1, Op2) of
-          {noop, noop} ->
-            {noop, noop};
-          {noop, NewOp} ->
-            {noop, {update, {{Key1, Type1}, NewOp}}};
-          {NewOp, noop} ->
-            {{update, {{Key1, Type1}, NewOp}}, noop};
-          {NewOp1, NewOp2} ->
-            {{update, {{Key1, Type1}, NewOp1}}, {update, {{Key1, Type1}, NewOp2}}}
-        end;
-      false ->
-        {A, B}
+compress({update, A}, {update, B}) ->
+    NewOp = case compress_helper(A, B) of
+        [] -> noop;
+        Op -> Op
+    end,
+    {noop, {update, NewOp}}.
+
+-spec compress_helper([nested_op()], [nested_op()]) -> [nested_op()].
+compress_helper([], B) ->
+    B;
+compress_helper(A, []) ->
+    A;
+compress_helper([Op1 = {update, {Elem1, IOp1}} | Rest1] = Ops1, [Op2 = {update, {Elem2, IOp2}} | Rest2] = Ops2) ->
+    if
+        Elem1 == Elem2 ->
+            {_, Type} = Elem1,
+            case Type:compress(IOp1, IOp2) of
+                {noop, noop} -> compress_helper(Rest1, Rest2);
+                {noop, NewOp} -> [{update, {Elem1, NewOp}} | compress_helper(Rest1, Rest2)];
+                {NewOp, noop} -> [{update, {Elem1, NewOp}} | compress_helper(Rest1, Rest2)];
+                {NewOp1, NewOp2} -> [{update, {Elem1, NewOp1}} | [{update, {Elem1, NewOp2}} | compress_helper(Rest1, Rest2)]]
+            end;
+        Elem1 > Elem2 ->
+            [Op2 | compress_helper(Ops1, Rest2)];
+        Elem1 < Elem2 ->
+            [Op1 | compress_helper(Rest1, Ops2)]
     end.
 
 %% ===================================================================
@@ -175,7 +186,7 @@ new_test() ->
 update_test() ->
     Map1 = new(),
     {ok, DownstreamOp} = downstream({update, {{key1, antidote_crdt_lwwreg}, {assign, <<"test">>}}}, Map1),
-    ?assertMatch({update, {{key1, antidote_crdt_lwwreg}, {_TS, <<"test">>}}}, DownstreamOp),
+    ?assertMatch({update, [{update, {{key1, antidote_crdt_lwwreg}, {_TS, <<"test">>}}}]}, DownstreamOp),
     {ok, Map2} = update(DownstreamOp, Map1),
     ?assertEqual([{{key1, antidote_crdt_lwwreg}, <<"test">>}], value(Map2)).
 
@@ -186,6 +197,19 @@ update2_test() ->
   {ok, Effect2} = downstream({reset, {}}, Map2),
   {ok, Map3} = update(Effect2, Map2),
   ?assertEqual([{{a, antidote_crdt_orset}, []}], value(Map3)).
+
+compression_test() ->
+    Update1 = {update, [{update, {{k1, antidote_crdt_gset}, [1, 2, 3]}}]},
+    Update2 = {update, [{update, {{k1, antidote_crdt_gset}, [4, 5, 6]}}]},
+    Update3 = {update, [{update, {{k2, antidote_crdt_gset}, [4, 5, 6]}}]},
+    Update4 = {update, [{update, {{k5, antidote_crdt_counter}, 5}}]},
+    ?assertEqual(can_compress(Update1, Update2), true),
+    ?assertEqual(compress(Update1, Update2), {noop, {update, [{update, {{k1, antidote_crdt_gset}, [1, 2, 3, 4, 5, 6]}}]}}),
+    {update, [U1]} = Update1,
+    {update, [U3]} = Update3,
+    ?assertEqual(compress(Update1, Update3), {noop, {update, [U1, U3]}}),
+    {update, [U4]} = Update4,
+    ?assertEqual(compress(Update1, Update4), {noop, {update, [U1, U4]}}).
 
 -endif.
 

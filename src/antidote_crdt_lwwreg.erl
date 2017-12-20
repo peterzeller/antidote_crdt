@@ -111,4 +111,9 @@ all_test() ->
     {ok, S1} = update(Downstream, S0),
     ?assertEqual(a, value(S1)).
 
+compression_test() ->
+    ?assertEqual(can_compress({100, a}, {200, b}), true),
+    ?assertEqual(compress({100, a}, {200, b}), {noop, {200, b}}),
+    ?assertEqual(compress({200, b}, {100, a}), {noop, {200, b}}).
+
 -endif.

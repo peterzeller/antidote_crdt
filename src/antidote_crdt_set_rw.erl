@@ -246,9 +246,8 @@ merge({Elem, Current1, ToAdd1, ToRemove1}, {Elem, Current2, ToAdd2, ToRemove2}) 
     NewCurrent = ordsets:union(Current1, Current2),
     Adds = ordsets:union(ToAdd1, ToAdd2),
     Removes = ordsets:union(ToRemove1, ToRemove2),
-    NewToAdd = ordsets:subtract(Adds, NewCurrent),
-    NewToRemove = ordsets:subtract(Removes, NewCurrent),
-    {Elem, NewCurrent, NewToAdd, NewToRemove}.
+    NewToAdd = ordsets:subtract(ordsets:subtract(Adds, NewCurrent), Removes),
+    {Elem, NewCurrent, NewToAdd, Removes}.
 
 %% ===================================================================
 %% EUnit tests
@@ -442,5 +441,12 @@ prop4_test() ->
   ?assertEqual([a], value(Set2a)),
   ?assertEqual([], Set2b),
   ?assertEqual([], value(Set2b)).
+
+compression_test() ->
+    Token1 = unique(),
+    Token2 = unique(),
+    ?assertEqual(can_compress([{a, [Token1], [Token2], []}], [{a, [Token1, Token2], [], [Token2]}]), true),
+    ?assertEqual(compress([{a, [Token1], [Token2], []}], [{a, lists:sort([Token1, Token2]), [], [Token2]}]), {noop, [{a, lists:sort([Token1, Token2]), [], [Token2]}]}),
+    ?assertEqual(compress([{a, [], [Token2], []}], [{a, [Token2], [], [Token2]}]), {noop, [{a, [Token2], [], [Token2]}]}).
 
 -endif.

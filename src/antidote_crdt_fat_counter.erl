@@ -154,9 +154,13 @@ compress(A, []) ->
     {noop, A};
 compress([], B) ->
     {noop, B};
-compress({_Token1, _Val1}=A, {_Token2, _Val2}=B) ->
-    {A, B};
-compress({Token1, _Val1}=A, [_Token, _TokensRest]=Tokens) ->
+compress({Token1, Val1}, {_Token2, Val2}) ->
+    NewOp = case Val1 + Val2 of
+        0 -> noop;
+        V -> {Token1, V}
+    end,
+    {noop, NewOp};
+compress({Token1, _Val1}=A, Tokens) ->
     A1 = case ordsets:subtract([Token1], Tokens) of
       [] ->
         noop;
@@ -164,7 +168,7 @@ compress({Token1, _Val1}=A, [_Token, _TokensRest]=Tokens) ->
         A
     end,
     {A1, Tokens};
-compress([_Token|_TokensRest]=Tokens, {Token2, _Val2}=B) ->
+compress(Tokens, {Token2, _Val2}=B) ->
     B1 = case ordsets:subtract([Token2], Tokens) of
       [] ->
         noop;
@@ -172,7 +176,7 @@ compress([_Token|_TokensRest]=Tokens, {Token2, _Val2}=B) ->
         B
     end,
     {B1, Tokens};
-compress([_Token1, _TokensRest1]=Tokens1, [_Token2, _TokensRest2]=Tokens2) ->
+compress(Tokens1, Tokens2) ->
     {noop, ordsets:union(Tokens1, Tokens2)}.
 
 %% ===================================================================
@@ -207,5 +211,16 @@ update_increment_test() ->
     ?assertEqual(4, value(FatCnt3)),
     ?assertEqual(0, value(FatCnt4)),
     ?assertEqual(-2, value(FatCnt5)).
+
+compression_test() ->
+    Token1 = unique(),
+    Token2 = unique(),
+    ?assertEqual(can_compress({Token1, 5}, {Token2, -5}), true),
+    ?assertEqual(compress({Token1, 5}, {Token2, -5}), {noop, noop}),
+    ?assertEqual(compress({Token1, 5}, {Token2, 10}), {noop, {Token1, 15}}),
+    ?assertEqual(compress({Token2, 10}, {Token1, 5}), {noop, {Token2, 15}}),
+    ?assertEqual(compress({Token2, 10}, lists:sort([Token1, Token2])), {noop, lists:sort([Token1, Token2])}),
+    ?assertEqual(compress(lists:sort([Token1, Token2]), {Token2, 10}), {noop, lists:sort([Token1, Token2])}),
+    ?assertEqual(compress({Token1, 10}, [Token2]), {{Token1, 10}, [Token2]}).
 
 -endif.

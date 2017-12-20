@@ -102,4 +102,10 @@ all_test() ->
     {ok, S1} = update(Downstream, S0),
     ?assertEqual(1, riak_dt_gset:stat(element_count, S1)).
 
+compression_test() ->
+    ?assertEqual(can_compress([1, 2, 3], [4, 5, 6]), true),
+    ?assertEqual(compress([1, 2, 3], [4, 5, 6]), {noop, [1, 2, 3, 4, 5, 6]}),
+    ?assertEqual(compress([1, 2, 3], []), {noop, [1, 2, 3]}),
+    ?assertEqual(compress([], [4, 5, 6]), {noop, [4, 5, 6]}).
+
 -endif.

@@ -189,5 +189,11 @@ reset_test() ->
     ?assertEqual([], value(R3)),
     ?assertEqual(true, is_bottom(R3)).
 
+compression_test() ->
+    Token1 = unique(),
+    Token2 = unique(),
+    ?assertEqual(can_compress({{a, Token1, []}}, {{a, Token2, [Token1]}}), true),
+    ?assertEqual(compress({a, Token1, []}, {a, Token2, [Token1]}), {noop, {a, Token2, [Token1]}}),
+    ?assertEqual(compress({a, Token2, [Token1]}, {a, Token1, []}), {{a, Token2, [Token1]}, noop}).
 
 -endif.

@@ -144,4 +144,10 @@ compress({increment, V1}, {increment, V2}) -> {noop, {increment, V1 + V2}}.
 %% ===================================================================
 -ifdef(TEST).
 
+compression_test() ->
+    ?assertEqual(can_compress({increment, 5}, {increment, -5}), true),
+    ?assertEqual(compress({increment, 5}, {increment, -5}), {noop, {increment, 0}}),
+    ?assertEqual(compress({increment, 10}, {increment, -5}), {noop, {increment, 5}}),
+    ?assertEqual(compress({increment, -5}, {increment, -5}), {noop, {increment, -10}}).
+
 -endif.

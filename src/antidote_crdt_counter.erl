@@ -185,4 +185,10 @@ binary_test() ->
     {ok, PNCnt2} = from_binary(BinaryPNCnt1),
     ?assert(equal(PNCnt1, PNCnt2)).
 
+compression_test() ->
+    ?assertEqual(can_compress(5, -5), true),
+    ?assertEqual(compress(5, -5), {noop, 0}),
+    ?assertEqual(compress(10, -5), {noop, 5}),
+    ?assertEqual(compress(-5, -5), {noop, -10}).
+
 -endif.

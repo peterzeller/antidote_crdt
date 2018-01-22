@@ -55,7 +55,6 @@ nestedOps(Operations, {_,Type}=Key) ->
   Resets ++ [{Clock, NestedOp} || {Clock, {update, {Key2, NestedOp}}} <- Operations, Key == Key2].
 
 nestedSpec(map_aw, Ops) -> spec(Ops);
-nestedSpec(set_aw, Ops) -> prop_set_aw:spec(Ops);
 nestedSpec(integer, Ops) -> prop_integer:spec(Ops).
 
 % normalizes operations (update-lists into single update-operations)
@@ -102,8 +101,7 @@ removeDuplicateKeys([{Key,Op}|Rest], Keys) ->
 nestedOp(Size) ->
   oneof(
     [
-      {{key(), integer}, prop_integer:op()},
-      {{key(), set_aw}, prop_set_aw:op()}
+      {{key(), integer}, prop_integer:op()}
     ]
     ++
     if
@@ -116,7 +114,7 @@ nestedOp(Size) ->
 typed_key() -> {key(), crdt_type()}.
 
 crdt_type() ->
-  oneof([integer, set_aw, map_aw]).
+  oneof([integer, map_aw]).
 
 key() ->
   oneof([a,b,c,d]).

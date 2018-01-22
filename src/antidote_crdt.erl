@@ -44,20 +44,8 @@
 
 -include("antidote_crdt.hrl").
 
--define(CRDTS, [counter_pn,
-                counter_b,
-                counter_fat,
-                integer,
-                flag_ew,
-                flag_dw,
-                set_go,
-                set_aw,
-                set_rw,
-                register_lww,
-                register_mv,
-                map_go,
+-define(CRDTS, [integer,
                 map_aw,
-                map_rr,
                 rga]).
 
 -export([is_type/1

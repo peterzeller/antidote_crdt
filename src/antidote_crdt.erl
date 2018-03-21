@@ -44,9 +44,9 @@
 
 -include("antidote_crdt.hrl").
 
--define(CRDTS, [integer,
-                map_aw,
-                rga]).
+-define(CRDTS, [antidote_crdt_integer,
+                antidote_crdt_map_aw,
+                antidote_crdt_rga]).
 
 -export([is_type/1
         ]).

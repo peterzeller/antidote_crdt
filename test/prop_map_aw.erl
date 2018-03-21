@@ -28,7 +28,7 @@
 
 
 prop_map_aw_spec() ->
- crdt_properties:crdt_satisfies_spec(map_aw, fun op/0, fun spec/1).
+ crdt_properties:crdt_satisfies_spec(antidote_crdt_map_aw, fun op/0, fun spec/1).
 
 
 spec(Operations1) ->
@@ -54,8 +54,8 @@ nestedOps(Operations, {_,Type}=Key) ->
     end,
   Resets ++ [{Clock, NestedOp} || {Clock, {update, {Key2, NestedOp}}} <- Operations, Key == Key2].
 
-nestedSpec(map_aw, Ops) -> spec(Ops);
-nestedSpec(integer, Ops) -> prop_integer:spec(Ops).
+nestedSpec(antidote_crdt_map_aw, Ops) -> spec(Ops);
+nestedSpec(antidote_crdt_integer, Ops) -> prop_integer:spec(Ops).
 
 % normalizes operations (update-lists into single update-operations)
 normalizeOp({Clock, {update, List}}, _) when is_list(List) ->
@@ -101,12 +101,12 @@ removeDuplicateKeys([{Key,Op}|Rest], Keys) ->
 nestedOp(Size) ->
   oneof(
     [
-      {{key(), integer}, prop_integer:op()}
+      {{key(), antidote_crdt_integer}, prop_integer:op()}
     ]
     ++
     if
       Size > 1 ->
-        [{{key(), map_aw}, ?LAZY(op(Size div 2))}];
+        [{{key(), antidote_crdt_map_aw}, ?LAZY(op(Size div 2))}];
       true -> []
     end
     ).
@@ -114,7 +114,7 @@ nestedOp(Size) ->
 typed_key() -> {key(), crdt_type()}.
 
 crdt_type() ->
-  oneof([integer, map_aw]).
+  oneof([antidote_crdt_integer, antidote_crdt_map_aw]).
 
 key() ->
   oneof([a,b,c,d]).

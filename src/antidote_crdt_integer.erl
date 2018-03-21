@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 
-%% integer: A convergent, replicated, operation based integer
+%% antidote_crdt_integer: A convergent, replicated, operation based antidote_crdt_integer
 %%
 %% This is an extension of the counter:
 %% Besides the increment operation, it also provides a set operation
@@ -32,7 +32,7 @@
 %% Implementation:
 %% A mix of counter and mvreg
 
--module(integer).
+-module(antidote_crdt_integer).
 
 -behaviour(antidote_crdt).
 

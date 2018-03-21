@@ -35,7 +35,7 @@
 %% Convergent and Commutative Replicated Data Types. http://hal.upmc.fr/inria-00555588/
 %%
 %% @end
--module(rga).
+-module(antidote_crdt_rga).
 
 -behaviour(antidote_crdt).
 
@@ -53,7 +53,7 @@
 
 -export([purge_tombstones/1]).
 
--export_type([rga/0, rga_op/0, rga_downstream_op/0]).
+-export_type([antidote_crdt_rga/0, antidote_crdt_rga_op/0, antidote_crdt_rga_downstream_op/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -61,13 +61,13 @@
 
 -type vertex() :: {ok | deleted, any(), number()}.
 
--type rga_downstream_op() :: {addRight, vertex(), vertex()} | {remove, {ok, any(), number()}}.
+-type antidote_crdt_rga_downstream_op() :: {addRight, vertex(), vertex()} | {remove, {ok, any(), number()}}.
 
--type rga_op() :: {addRight, {any(), non_neg_integer()}} | {remove, non_neg_integer()}.
+-type antidote_crdt_rga_op() :: {addRight, {any(), non_neg_integer()}} | {remove, non_neg_integer()}.
 
--type rga_result() :: {ok, rga()}.
+-type antidote_crdt_rga_result() :: {ok, antidote_crdt_rga()}.
 
--type rga() :: [vertex()].
+-type antidote_crdt_rga() :: [vertex()].
 
 -spec new() -> [].
 new() ->
@@ -76,7 +76,7 @@ new() ->
 %% @doc generate downstream operations.
 %% If the operation is addRight, generates a unique token for the new element.
 %% If the operation is remove, fetches the vertex of the element to be removed.
--spec downstream(rga_op(), rga()) -> {ok, rga_downstream_op()} | {error, {invalid_position, number()}}.
+-spec downstream(antidote_crdt_rga_op(), antidote_crdt_rga()) -> {ok, antidote_crdt_rga_downstream_op()} | {error, {invalid_position, number()}}.
 downstream({addRight, {Elem, Position}}, Rga) ->
     case (Position < 0) or (Position > length(Rga)) of
         true -> {error, {invalid_position, Position}};
@@ -89,13 +89,13 @@ downstream({remove, Position}, Rga) ->
     {ok, {remove, lists:nth(Position, Rga)}}.
 
 %% @doc given an RGA, returns the same RGA, as it represents its own value.
--spec value(rga()) -> rga().
+-spec value(antidote_crdt_rga()) -> antidote_crdt_rga().
 value(Rga) ->
     Rga.
 
-%% @doc This method takes in an rga operation and an rga to perform the operation.
-%% It returns either the added Vertex and the new rga in case of an addRight, and the new rga in the case of a remove.
--spec update(rga_downstream_op(), rga()) -> rga_result().
+%% @doc This method takes in an antidote_crdt_rga operation and an antidote_crdt_rga to perform the operation.
+%% It returns either the added Vertex and the new antidote_crdt_rga in case of an addRight, and the new antidote_crdt_rga in the case of a remove.
+-spec update(antidote_crdt_rga_downstream_op(), antidote_crdt_rga()) -> antidote_crdt_rga_result().
 update({addRight, RightVertex, NewVertex}, Rga) ->
     recursive_insert(RightVertex, NewVertex, Rga, []);
 update({remove, Vertex}, Rga) ->
@@ -103,7 +103,7 @@ update({remove, Vertex}, Rga) ->
 
 %% Private
 %% @doc recursively looks for the Vertex where the new element should be put to the right of.
--spec recursive_insert(vertex(), vertex(), rga(), list()) -> rga_result().
+-spec recursive_insert(vertex(), vertex(), antidote_crdt_rga(), list()) -> antidote_crdt_rga_result().
 recursive_insert(_, NewVertex, [], []) ->
     {ok, [NewVertex]};
 recursive_insert({ok, 0, 0}, NewVertex, L, []) ->
@@ -115,7 +115,7 @@ recursive_insert(RightVertex, NewVertex, [H | T], L) ->
 
 %% Private
 %% @doc the place for the insertion has been found, so now the UIDs are compared to see where to insert.
--spec add_element(vertex(), rga(), list()) -> rga_result().
+-spec add_element(vertex(), antidote_crdt_rga(), list()) -> antidote_crdt_rga_result().
 add_element({Status, Value, UID}, [{Status1, Value1, UID1} | T], L) ->
     case UID >= UID1 of
         true ->
@@ -129,12 +129,12 @@ add_element(Insert, [], L) ->
 %% Private
 %% @doc looks for the Vertex to be removed. Once it's found, it's marked as "deleted".
 %% The Vertex is not removed from the list, to allow adding elements to its right.
--spec remove_vertex(vertex(), rga()) -> rga_result().
+-spec remove_vertex(vertex(), antidote_crdt_rga()) -> antidote_crdt_rga_result().
 remove_vertex({ok, Value, UID}, Rga) ->
     {ok, lists:keyreplace(UID, 3, Rga, {deleted, Value, UID})}.
 
-%% @doc given an rga, this mehtod looks for all tombstones and removes them, returning the tombstone free rga.
--spec purge_tombstones(rga()) -> rga_result().
+%% @doc given an antidote_crdt_rga, this mehtod looks for all tombstones and removes them, returning the tombstone free antidote_crdt_rga.
+-spec purge_tombstones(antidote_crdt_rga()) -> antidote_crdt_rga_result().
 purge_tombstones(Rga) ->
     L = lists:filter(fun({Status, _, _}) -> Status == ok end, Rga),
     {ok, L}.
@@ -176,25 +176,25 @@ generate_downstream_invalid_position_test() ->
     Result2 = downstream({addRight, {1, -1}}, L),
     ?assertMatch({error, {invalid_position, -1}}, Result2).
 
-generate_downstream_empty_rga_test() ->
+generate_downstream_empty_antidote_crdt_rga_test() ->
     L = new(),
     {ok, DownstreamOp} = downstream({addRight, {4, 0}}, L),
     ?assertMatch({addRight, {ok, 0, 0}, {ok, 4, _}}, DownstreamOp).
 
-generate_downstream_non_empty_rga_test() ->
+generate_downstream_non_empty_antidote_crdt_rga_test() ->
     L = new(),
     {ok, DownstreamOp} = downstream({addRight, {4, 0}}, L),
     {ok, L1} = update(DownstreamOp, L),
     {ok, DownstreamOp1} = downstream({addRight, {3, 1}}, L1),
     ?assertMatch({addRight, {ok, 4, _}, {ok, 3, _}}, DownstreamOp1).
 
-add_right_in_empty_rga_test() ->
+add_right_in_empty_antidote_crdt_rga_test() ->
     L = new(),
     {ok, DownstreamOp} = downstream({addRight, {1, 0}}, L),
     {ok, L1} = update(DownstreamOp, L),
     ?assertMatch([{ok, 1, _}], L1).
 
-add_right_in_non_empty_rga_test() ->
+add_right_in_non_empty_antidote_crdt_rga_test() ->
     L = new(),
     {ok, DownstreamOp} = downstream({addRight, {1, 0}}, L),
     {ok, L1} = update(DownstreamOp, L),

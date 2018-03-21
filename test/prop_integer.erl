@@ -28,7 +28,7 @@
 
 
 prop_integer_spec() ->
- crdt_properties:crdt_satisfies_spec(integer, fun op/0, fun spec/1).
+ crdt_properties:crdt_satisfies_spec(antidote_crdt_integer, fun op/0, fun spec/1).
 
 
 spec(Operations1) ->
